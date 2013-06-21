@@ -1,4 +1,4 @@
-package com.zenoss.metric.tsdb;
+package org.zenoss.metric.tsdb;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,24 +13,24 @@ import java.util.Map;
 
 
 /**
- * TsdbSocketClient provides a socket interface to the OpenTsdb telnet service.  The client
+ * OpenTsdbSocketClient provides a socket interface to the OpenTsdb telnet service.  The client
  * provides #put to publish metrics.
  */
-public class TsdbSocketClient {
-    static final Logger log = LoggerFactory.getLogger(TsdbSocketClient.class);
+public class OpenTsdbSocketClient {
+    static final Logger log = LoggerFactory.getLogger(OpenTsdbSocketClient.class);
 
-    public TsdbSocketClient(String host, int port) {
+    public OpenTsdbSocketClient(String host, int port) {
         address = new InetSocketAddress(host, port);
     }
 
     /** Use the address provided to connect, use #open before interacting with the client */
-    public TsdbSocketClient(SocketAddress address) {
+    public OpenTsdbSocketClient(SocketAddress address) {
         this.address = address;
     }
 
 
     /** Open with existing socket. This ctor assumes the socket's already opened */
-    public TsdbSocketClient(Socket socket) throws IOException {
+    public OpenTsdbSocketClient(Socket socket) throws IOException {
         this.socket = socket;
         this.address = socket.getRemoteSocketAddress();
         this.in = socket.getInputStream();
@@ -42,7 +42,7 @@ public class TsdbSocketClient {
      *
      * @throws IllegalStateException when not open
      */
-    public synchronized void put(Metric metric) throws IOException, TsdbException {
+    public synchronized void put(Metric metric) throws IOException, OpenTsdbException {
         if (socket == null) {
             throw new IllegalStateException("Client not open");
         }
@@ -74,12 +74,12 @@ public class TsdbSocketClient {
                 byte[] response = new byte[available];
                 in.read(response);
                 String message = new String(response, "UTF-8");
-                throw new TsdbException(message);
+                throw new OpenTsdbException(message);
             }
 
             //server EOF
             if (available < 0) {
-                throw new TsdbConnectionClosedException();
+                throw new OpenTsdbConnectionClosedException();
             }
             sleep( 50);
         }

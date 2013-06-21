@@ -1,4 +1,4 @@
-package com.zenoss.metric.tsdb;
+package org.zenoss.metric.tsdb;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -13,11 +13,13 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
-public class TsdbSocketClientTest {
+public class OpenTsdbSocketClientTest {
 
     @Mock
     Socket socket;
@@ -41,20 +43,20 @@ public class TsdbSocketClientTest {
 
     @Test(expected = IOException.class)
     public void testOpenWithHostAndPort() throws Exception {
-        TsdbSocketClient client = new TsdbSocketClient("127.0.0.1", 0);
+        OpenTsdbSocketClient client = new OpenTsdbSocketClient("127.0.0.1", 0);
         client.open();
     }
 
     @Test(expected = IOException.class)
     public void testOpenWithSocketAddress() throws Exception {
-        TsdbSocketClient client = new TsdbSocketClient(new InetSocketAddress("127.0.0.1", 0));
+        OpenTsdbSocketClient client = new OpenTsdbSocketClient(new InetSocketAddress("127.0.0.1", 0));
         client.open();
     }
 
     @Test
     public void testClose() {
         try {
-            TsdbSocketClient client = new TsdbSocketClient(socket);
+            OpenTsdbSocketClient client = new OpenTsdbSocketClient(socket);
             client.close();
             client.close();
             verify(socket, times(1)).close();
@@ -69,58 +71,59 @@ public class TsdbSocketClientTest {
     public void testSleep() throws Exception {
         //test non-interrupted scenario
         assertFalse(Thread.currentThread().isInterrupted());
-        TsdbSocketClient.sleep(1);
+        OpenTsdbSocketClient.sleep(1);
         assertFalse(Thread.currentThread().isInterrupted());
 
         //test interrupted scenario
         Thread.currentThread().interrupt();
         assertTrue(Thread.currentThread().isInterrupted());
-        TsdbSocketClient.sleep(1);
+        OpenTsdbSocketClient.sleep(1);
         assertTrue(Thread.currentThread().interrupted());
     }
 
     @Test
     public void testToPutMessageWithNoTags() throws Exception {
         Metric metric = new Metric("m", 0, 0.0);
-        assertEquals("put m 0 0.0\n", TsdbSocketClient.toPutMessage(metric));
+        assertEquals("put m 0 0.0\n", OpenTsdbSocketClient.toPutMessage(metric));
     }
 
     @Test
     public void testToPutMessageWithTags() throws Exception {
-        Metric metric = new Metric("m", 0, 0.0);
-        metric.setTag("h", "h");
-        assertEquals("put m 0 0.0 h=h\n", TsdbSocketClient.toPutMessage(metric));
+        Map<String, String> tags = new HashMap<>();
+        tags.put("h", "h");
+        Metric metric = new Metric("m", 0, 0.0,tags);
+        assertEquals("put m 0 0.0 h=h\n", OpenTsdbSocketClient.toPutMessage(metric));
     }
 
     @Test
     public void testPutSuccess() throws Exception {
         Metric metric = new Metric("m", 0, 0.0);
-        String message = TsdbSocketClient.toPutMessage(metric);
-        TsdbSocketClient client = new TsdbSocketClient(socket);
+        String message = OpenTsdbSocketClient.toPutMessage(metric);
+        OpenTsdbSocketClient client = new OpenTsdbSocketClient(socket);
         when(input.available()).thenReturn(0);
         try {
             client.put(metric);
             verify(output, times(1)).write(message.getBytes());
             verify(output, times(1)).flush();
             verify(input, times(5)).available();
-        } catch (IOException | TsdbException ex) {
+        } catch (IOException | OpenTsdbException ex) {
             ex.printStackTrace();
             fail();
         }
     }
 
-    @Test(expected=TsdbConnectionClosedException.class)
+    @Test(expected=OpenTsdbConnectionClosedException.class)
     public void testPutThrowsConnectionClosedException() throws Exception {
         Metric metric = new Metric("m", 0, 0.0);
-        TsdbSocketClient client = new TsdbSocketClient(socket);
+        OpenTsdbSocketClient client = new OpenTsdbSocketClient(socket);
         when(input.available()).thenReturn(-1);
         client.put(metric);
     }
 
-    @Test(expected=TsdbException.class)
+    @Test(expected=OpenTsdbException.class)
     public void testPutThrowsTsdbException() throws Exception {
         final Metric metric = new Metric("m", 0, 0.0);
-        final TsdbSocketClient client = new TsdbSocketClient(socket);
+        final OpenTsdbSocketClient client = new OpenTsdbSocketClient(socket);
         final String response = "put: failed";
         when(input.available()).thenReturn(response.getBytes().length);
         doAnswer(new Answer() {

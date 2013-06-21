@@ -1,4 +1,4 @@
-package com.zenoss.metric.tsdb;
+package org.zenoss.metric.tsdb;
 
 /**
  * Created with IntelliJ IDEA.
@@ -7,5 +7,5 @@ package com.zenoss.metric.tsdb;
  * Time: 10:51 AM
  * To change this template use File | Settings | File Templates.
  */
-public class TsdbConnectionClosedException extends TsdbException {
+public class OpenTsdbConnectionClosedException extends OpenTsdbException {
 }
