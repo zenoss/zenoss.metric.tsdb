@@ -13,6 +13,7 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -20,6 +21,8 @@ import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 public class OpenTsdbSocketClientTest {
+
+    static final Map<String, String> EMPTY_MAP = Collections.emptyMap();
 
     @Mock
     Socket socket;
@@ -82,27 +85,13 @@ public class OpenTsdbSocketClientTest {
     }
 
     @Test
-    public void testToPutMessageWithNoTags() throws Exception {
-        Metric metric = new Metric("m", 0, 0.0);
-        assertEquals("put m 0 0.0\n", OpenTsdbSocketClient.toPutMessage(metric));
-    }
-
-    @Test
-    public void testToPutMessageWithTags() throws Exception {
-        Map<String, String> tags = new HashMap<>();
-        tags.put("h", "h");
-        Metric metric = new Metric("m", 0, 0.0,tags);
-        assertEquals("put m 0 0.0 h=h\n", OpenTsdbSocketClient.toPutMessage(metric));
-    }
-
-    @Test
     public void testPutSuccess() throws Exception {
-        Metric metric = new Metric("m", 0, 0.0);
-        String message = OpenTsdbSocketClient.toPutMessage(metric);
         OpenTsdbSocketClient client = new OpenTsdbSocketClient(socket);
         when(input.available()).thenReturn(0);
+
         try {
-            client.put(metric);
+            String message = OpenTsdbSocketClient.toPutMessage("m", 0, 0.0, EMPTY_MAP);
+            client.put(message);
             verify(output, times(1)).write(message.getBytes());
             verify(output, times(1)).flush();
             verify(input, times(5)).available();
@@ -114,15 +103,14 @@ public class OpenTsdbSocketClientTest {
 
     @Test(expected=OpenTsdbConnectionClosedException.class)
     public void testPutThrowsConnectionClosedException() throws Exception {
-        Metric metric = new Metric("m", 0, 0.0);
         OpenTsdbSocketClient client = new OpenTsdbSocketClient(socket);
         when(input.available()).thenReturn(-1);
-        client.put(metric);
+        String message = OpenTsdbSocketClient.toPutMessage("m", 0, 0.0, EMPTY_MAP);
+        client.put(message);
     }
 
     @Test(expected=OpenTsdbException.class)
     public void testPutThrowsTsdbException() throws Exception {
-        final Metric metric = new Metric("m", 0, 0.0);
         final OpenTsdbSocketClient client = new OpenTsdbSocketClient(socket);
         final String response = "put: failed";
         when(input.available()).thenReturn(response.getBytes().length);
@@ -134,6 +122,7 @@ public class OpenTsdbSocketClientTest {
                 return null;
             }
         }).when(input).read(any( byte[].class));
-        client.put(metric);
+        String message = OpenTsdbSocketClient.toPutMessage("m", 0, 0.0, EMPTY_MAP);
+        client.put(message);
     }
 }

@@ -42,14 +42,11 @@ public class OpenTsdbSocketClient {
      *
      * @throws IllegalStateException when not open
      */
-    public synchronized void put(Metric metric) throws IOException, OpenTsdbException {
+    public synchronized void put(String bugger) throws IOException, OpenTsdbException {
         if (socket == null) {
             throw new IllegalStateException("Client not open");
         }
-
-        //write the metric
-        String bugger = toPutMessage(metric);
-        log.debug("Writing {}: {}", metric, bugger);
+        log.debug("Writing {}:", bugger);
         out.write(bugger.getBytes());
         out.flush();
 
@@ -117,24 +114,22 @@ public class OpenTsdbSocketClient {
     /**
      * convert a metric object into a metrics put byte buffer message
      */
-    static String toPutMessage(Metric metric) {
+    public static String toPutMessage(String name, long timestamp, double value, Map<String, String> tags) {
         StringBuilder builder = new StringBuilder();
         builder.append("put ");
-        builder.append(metric.getName());
+        builder.append(name);
         builder.append(" ");
-        builder.append(metric.getTimestamp());
+        builder.append(timestamp);
         builder.append(" ");
-        builder.append(metric.getValue());
+        builder.append(value);
 
-        Map<String, String> tags = metric.getTags();
         for (Map.Entry<String, String> entry : tags.entrySet()) {
-            String name = entry.getKey();
-            String value = entry.getValue();
-
+            String entryName = entry.getKey();
+            String entryValue = entry.getValue();
             builder.append(" ");
-            builder.append(name);
+            builder.append(entryName);
             builder.append("=");
-            builder.append(value);
+            builder.append(entryValue);
         }
         builder.append("\n");
         return builder.toString();
