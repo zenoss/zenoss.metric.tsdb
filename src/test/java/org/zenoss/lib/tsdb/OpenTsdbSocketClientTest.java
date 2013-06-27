@@ -4,15 +4,11 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.net.SocketAddress;
 import java.util.Collections;
 import java.util.Map;
 
@@ -24,7 +20,7 @@ public class OpenTsdbSocketClientTest {
     static final Map<String, String> EMPTY_MAP = Collections.emptyMap();
 
     @Mock
-    OpenTsdbSocketClientConfiguration configuration;
+    OpenTsdbClientConfiguration configuration;
 
     @Mock
     Socket socket;
@@ -35,7 +31,7 @@ public class OpenTsdbSocketClientTest {
     @Mock
     OutputStream output;
 
-    OpenTsdbSocketClient client;
+    OpenTsdbClient client;
 
     @Before
     public void setUp() throws Exception {
@@ -43,7 +39,7 @@ public class OpenTsdbSocketClientTest {
         when(socket.getInputStream()).thenReturn(input);
         when(socket.getOutputStream()).thenReturn(output);
         when(configuration.newSocket()).thenReturn(socket);
-        client = new OpenTsdbSocketClient(configuration);
+        client = new OpenTsdbClient(configuration);
         client.open();
     }
 
@@ -62,7 +58,7 @@ public class OpenTsdbSocketClientTest {
 
     @Test
     public void testPut() throws IOException {
-        String message = OpenTsdbSocketClient.toPutMessage("m", 0, 0.0, EMPTY_MAP);
+        String message = OpenTsdbClient.toPutMessage("m", 0, 0.0, EMPTY_MAP);
         client.put(message);
         verify(output, times(1)).write(message.getBytes());
     }

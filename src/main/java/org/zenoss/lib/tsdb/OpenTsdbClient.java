@@ -9,21 +9,13 @@ import java.util.Map;
 
 
 /**
- * OpenTsdbSocketClient provides a socket interface to the OpenTsdb telnet service.  The client
+ * OpenTsdbClient provides a socket interface to the OpenTsdb telnet service.  The client
  * provides #put to publish metrics.
  */
-public class OpenTsdbSocketClient {
-    static final Logger log = LoggerFactory.getLogger(OpenTsdbSocketClient.class);
+public class OpenTsdbClient {
+    static final Logger log = LoggerFactory.getLogger(OpenTsdbClient.class);
 
-    OpenTsdbSocketClientConfiguration configuration;
-
-    volatile Socket socket;
-
-    volatile OutputStream out;
-
-    volatile BufferedReader reader;
-
-    public OpenTsdbSocketClient( OpenTsdbSocketClientConfiguration configuration) {
+    public OpenTsdbClient(OpenTsdbClientConfiguration configuration) {
         this.configuration = configuration;
     }
 
@@ -44,6 +36,20 @@ public class OpenTsdbSocketClient {
         out.write(bugger.getBytes());
     }
 
+    public String version() throws IOException {
+        out.write( "version\n".getBytes());
+        out.flush();
+
+        //TODO read...
+
+        return "";
+    }
+
+    /** flush the output stream */
+    public void flush() throws IOException {
+        out.flush();
+    }
+
     /**
      * Read one line from the tsdb socket
      */
@@ -57,8 +63,9 @@ public class OpenTsdbSocketClient {
     public void open() throws IOException {
         log.info("Opening Tsdb Communication");
         socket = configuration.newSocket();
+        in = socket.getInputStream();
         out = socket.getOutputStream();
-        reader = new BufferedReader( new InputStreamReader( socket.getInputStream()));
+        reader = new BufferedReader( new InputStreamReader( in));
     }
 
     /**
@@ -103,4 +110,15 @@ public class OpenTsdbSocketClient {
         builder.append("\n");
         return builder.toString();
     }
+
+
+    private Socket socket;
+
+    private InputStream in;
+
+    private OutputStream out;
+
+    private BufferedReader reader;
+
+    private OpenTsdbClientConfiguration configuration;
 }
