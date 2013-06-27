@@ -8,7 +8,7 @@
     <name>zenoss.metric.tsdb</name>
     <url>http://maven.apache.org</url>
     <properties>
-        <version.zapp>0.0.3-SNAPSHOT</version.zapp>
+        <version.zapp>0.0.3</version.zapp>
         <version.dropwizard>0.6.2</version.dropwizard>
         <version.jersey>1.15</version.jersey>
         <version.junit>4.11</version.junit>
@@ -39,6 +39,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.1</version>
                 <configuration>
                     <source>1.7</source>
                     <target>1.7</target>
