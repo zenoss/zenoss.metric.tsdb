@@ -22,22 +22,11 @@ public class OpenTsdbClientConfiguration {
         return port;
     }
 
-    @SuppressWarnings({"unused"})
     public void setHost(String host) {
         this.host = host;
     }
 
-    @SuppressWarnings({"unused"})
     public void setPort(Integer port) {
         this.port = port;
-    }
-
-    /** Open a socket using specified port and address */
-    public Socket newSocket() throws IOException {
-        SocketAddress address = new InetSocketAddress(getHost(), getPort());
-        Socket socket = new Socket();
-        socket.connect(address);
-        socket.setKeepAlive(true);
-        return socket;
     }
 }
