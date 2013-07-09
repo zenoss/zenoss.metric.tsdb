@@ -4,7 +4,7 @@
     <groupId>org.zenoss</groupId>
     <artifactId>zenoss.metric.tsdb</artifactId>
     <packaging>jar</packaging>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.0.3-SNAPSHOT</version>
     <name>zenoss.metric.tsdb</name>
     <url>http://maven.apache.org</url>
     <properties>
