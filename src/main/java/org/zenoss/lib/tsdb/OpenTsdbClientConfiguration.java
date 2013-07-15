@@ -14,6 +14,9 @@ public class OpenTsdbClientConfiguration {
     @JsonProperty
     private Integer port;
 
+    @JsonProperty
+    private Integer maxConnections = 1;
+
     public String getHost() {
         return host;
     }
@@ -22,11 +25,19 @@ public class OpenTsdbClientConfiguration {
         return port;
     }
 
+    public Integer getMaxConnections() {
+        return maxConnections;
+    }
+
     public void setHost(String host) {
         this.host = host;
     }
 
     public void setPort(Integer port) {
         this.port = port;
+    }
+
+    public void setMaxConnections(Integer maxConnections) {
+        this.maxConnections = maxConnections;
     }
 }

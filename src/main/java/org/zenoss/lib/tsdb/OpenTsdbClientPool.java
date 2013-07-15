@@ -21,8 +21,10 @@ public class OpenTsdbClientPool {
 
         Collection<OpenTsdbClientConfiguration> clientConfigs = configuration.getClientConfigurations();
         for (OpenTsdbClientConfiguration clientConfig : clientConfigs) {
-            SocketAddress address = new InetSocketAddress(clientConfig.getHost(), clientConfig.getPort());
-            add(address);
+            for ( int i = 0; i < clientConfig.getMaxConnections(); ++i) {
+                SocketAddress address = new InetSocketAddress(clientConfig.getHost(), clientConfig.getPort());
+                add(address);
+            }
         }
     }
 
