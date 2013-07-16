@@ -2,13 +2,13 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.zenoss</groupId>
-    <artifactId>zenoss.metric.tsdb</artifactId>
+    <artifactId>metric-tsdb</artifactId>
     <packaging>jar</packaging>
     <version>0.0.2-SNAPSHOT</version>
     <name>zenoss.metric.tsdb</name>
     <url>http://maven.apache.org</url>
     <properties>
-        <version.zapp>0.0.3</version.zapp>
+        <version.zapp>0.0.5</version.zapp>
         <version.dropwizard>0.6.2</version.dropwizard>
         <version.jersey>1.15</version.jersey>
         <version.junit>4.11</version.junit>
