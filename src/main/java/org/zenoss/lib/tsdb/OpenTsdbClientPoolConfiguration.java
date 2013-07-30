@@ -33,6 +33,9 @@ public class OpenTsdbClientPoolConfiguration {
      */
     @JsonProperty
     private long minTestTime = 60 * 1000;
+    
+    @JsonProperty
+    private long maxWaitTime = 10_000L;
 
     public OpenTsdbClientFactoryConfiguration getClientFactoryConfiguration() {
         return clientFactoryConfiguration;
@@ -49,9 +52,17 @@ public class OpenTsdbClientPoolConfiguration {
     public long getMinTestTime() {
         return minTestTime;
     }
+    
+    public long getMaxWaitTime() {
+        return maxWaitTime;
+    }
 
     public void setMaxKeepAliveTime(long maxKeepAliveTime) {
         this.maxKeepAliveTime = maxKeepAliveTime;
+    }
+    
+    public void setMaxWaitTime(long maxWaitTime) {
+        this.maxWaitTime = maxWaitTime;
     }
 
     public void setMinTestTime(long minTestTime) {

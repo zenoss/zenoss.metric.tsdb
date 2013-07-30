@@ -5,6 +5,9 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.net.Socket;
+import java.net.SocketAddress;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 
@@ -14,6 +17,7 @@ import java.util.Map;
  * Furthermore, the socket's assumed to be opened before using this class.
  */
 public class OpenTsdbClient {
+    
     static final Logger log = LoggerFactory.getLogger(OpenTsdbClient.class);
 
     /**
@@ -22,6 +26,8 @@ public class OpenTsdbClient {
     public OpenTsdbClient(Socket socket) {
         this.socket = socket;
         this.closed = false;
+        this.allocated = System.currentTimeMillis();
+        this.charset = StandardCharsets.UTF_8; // Make configurable?
     }
 
     /**
@@ -35,7 +41,7 @@ public class OpenTsdbClient {
      * Write a metric to the tsdb socket and read it's response
      */
     public void put(String bugger) throws IOException {
-        socket.getOutputStream().write(bugger.getBytes());
+        socket.getOutputStream().write(bugger.getBytes(charset));
     }
 
     /**
@@ -53,13 +59,13 @@ public class OpenTsdbClient {
 
         //assuming a message size
         byte[] message = new byte[512];
-        int read = in.read( message);
+        int read = in.read (message);
 
-        if ( read <= 0) {
+        if (read <= 0) {
             return null;
         }
 
-        return new String( message, 0, read);
+        return new String (message, 0, read, charset);
     }
 
     /**
@@ -67,11 +73,11 @@ public class OpenTsdbClient {
      */
     public String version() throws IOException {
         OutputStream out = socket.getOutputStream();
-        out.write("version\n".getBytes());
+        out.write("version\n".getBytes(charset));
         out.flush();
 
         String version = read();
-        if ( version == null) {
+        if (version == null) {
             throw new IOException( "no version response from server");
         }
 
@@ -131,7 +137,27 @@ public class OpenTsdbClient {
         builder.append("\n");
         return builder.toString();
     }
+    
+    long getAllocated() {
+        return allocated;
+    }
+    
+    long getTested() {
+        return tested;
+    }
+    
+    void updateTested() {
+        tested = System.currentTimeMillis();
+    }
+    
+    SocketAddress socketAddress() {
+        return socket.getRemoteSocketAddress();
+    }
 
     private boolean closed;
     private final Socket socket;
+    private final long allocated;
+    private long tested;
+    private final Charset charset;
+
 }

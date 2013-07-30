@@ -2,12 +2,8 @@ package org.zenoss.lib.tsdb;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.net.SocketAddress;
-
 public class OpenTsdbClientConfiguration {
+    
     @JsonProperty
     private String host;
 
