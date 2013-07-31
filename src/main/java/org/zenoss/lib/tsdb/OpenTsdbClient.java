@@ -86,7 +86,7 @@ public class OpenTsdbClient {
 
     /**
      * test that the server is alive and available for communication
-     * @return
+     * @return true if data could be read, false otherwise
      */
     public boolean isAlive() {
         try {

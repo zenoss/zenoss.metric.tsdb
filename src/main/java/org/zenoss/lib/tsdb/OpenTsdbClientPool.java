@@ -4,7 +4,10 @@ import org.apache.commons.pool.impl.GenericObjectPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
+/**
+ * Pools connections to OpenTSDB
+ * @author cschellenger
+ */
 public class OpenTsdbClientPool extends GenericObjectPool<OpenTsdbClient> {
     static final Logger log = LoggerFactory.getLogger(OpenTsdbClientPool.class);
 

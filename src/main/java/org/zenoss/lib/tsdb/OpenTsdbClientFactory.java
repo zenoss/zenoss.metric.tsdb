@@ -36,8 +36,7 @@ public class OpenTsdbClientFactory extends BasePoolableObjectFactory<OpenTsdbCli
     }
 
     /**
-     * create a new OpenTsdbClient using provided socket address;
-     * @param address address to connect and create client with
+     * Create a new OpenTsdbClient using provided socket address
      * @return a new client with configured parameters
      * @throws IOException when SocketFactory#newSocket() throws
      */
@@ -57,6 +56,21 @@ public class OpenTsdbClientFactory extends BasePoolableObjectFactory<OpenTsdbCli
         return new OpenTsdbClient(socket);
     }
 
+    /**
+     * <p>Check that the specified client is still OK to use</p>
+     * <p>This checks multiple factors:
+     * <ul>
+     * <li>Has the client exceeded its maximum TTL?</li>
+     * <li>Has the client been explicitly closed?</li>
+     * <li>If more than the minimum test time has elapsed, can the client still 
+     * receive data from the OpenTSDB server?</li>
+     * </ul>
+     * If the answer to any of these questions is "yes" the client will be
+     * considered invalid and will not be used.
+     * </p>
+     * @param client
+     * @return true if client is alive, false otherwise
+     */
     @Override
     public boolean validateObject(OpenTsdbClient client) {
         //client exceeded his liveliness
@@ -80,6 +94,10 @@ public class OpenTsdbClientFactory extends BasePoolableObjectFactory<OpenTsdbCli
         return !client.isClosed(); // Has anyone explicitly closed the client?
     }
 
+    /**
+     * Closes the connection.
+     * @param client 
+     */
     @Override
     public void destroyObject(OpenTsdbClient client) {
         client.close();

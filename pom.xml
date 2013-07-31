@@ -13,6 +13,7 @@
         <version.dropwizard>0.6.2</version.dropwizard>
         <version.jersey>1.15</version.jersey>
         <version.junit>4.11</version.junit>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
     <dependencies>
         <!-- compile dependencies -->
