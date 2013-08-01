@@ -3,9 +3,12 @@ package org.zenoss.lib.tsdb;
 import java.io.IOException;
 import java.net.*;
 
+/**
+ * Creates sockets and connects them
+ */
 public class SocketFactory {
 
-    public SocketFactory( SocketFactoryConfiguration configuration) {
+    public SocketFactory (SocketFactoryConfiguration configuration) {
         this.configuration = configuration;
     }
 
