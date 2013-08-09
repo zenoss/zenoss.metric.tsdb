@@ -41,14 +41,14 @@ public class OpenTsdbClient {
      * Write a metric to the tsdb socket and read it's response
      */
     public void put(String bugger) throws IOException {
-        socket.getOutputStream().write(bugger.getBytes(charset));
+        getOutput().write(bugger.getBytes(charset));
     }
 
     /**
      * flush the output stream
      */
     public void flush() throws IOException {
-        socket.getOutputStream().flush();
+        getOutput().flush();
     }
 
     /**
@@ -72,7 +72,7 @@ public class OpenTsdbClient {
      * request version from socket server
      */
     public String version() throws IOException {
-        OutputStream out = socket.getOutputStream();
+        OutputStream out = getOutput();
         out.write("version\n".getBytes(charset));
         out.flush();
 
@@ -153,9 +153,17 @@ public class OpenTsdbClient {
     SocketAddress socketAddress() {
         return socket.getRemoteSocketAddress();
     }
+    
+    private OutputStream getOutput() throws IOException {
+        if (output == null) {
+            output = new BufferedOutputStream(socket.getOutputStream());
+        }
+        return output;
+    }
 
     private boolean closed;
     private final Socket socket;
+    private OutputStream output;
     private final long allocated;
     private long tested;
     private final Charset charset;
