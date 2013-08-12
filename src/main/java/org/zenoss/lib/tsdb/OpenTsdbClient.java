@@ -23,9 +23,10 @@ public class OpenTsdbClient {
     /**
      * @param socket use provided socket for connection
      */
-    public OpenTsdbClient(Socket socket) {
+    public OpenTsdbClient(Socket socket, int bufferSize) {
         this.socket = socket;
         this.closed = false;
+        this.bufferSize = bufferSize;
         this.allocated = System.currentTimeMillis();
         this.charset = StandardCharsets.UTF_8; // Make configurable?
     }
@@ -156,16 +157,23 @@ public class OpenTsdbClient {
     
     private OutputStream getOutput() throws IOException {
         if (output == null) {
-            output = new BufferedOutputStream(socket.getOutputStream());
+            output = new BufferedOutputStream(socket.getOutputStream(), bufferSize);
         }
         return output;
     }
-
-    private boolean closed;
+    
+    // Dependencies
     private final Socket socket;
+    
+    // Internal state
     private OutputStream output;
-    private final long allocated;
+    private boolean closed;
     private long tested;
+    private final long allocated;
+    
+    // Configuration
+    private final int bufferSize;
     private final Charset charset;
+    
 
 }

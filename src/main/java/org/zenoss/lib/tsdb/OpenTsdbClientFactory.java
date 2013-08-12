@@ -28,9 +28,11 @@ public class OpenTsdbClientFactory extends BasePoolableObjectFactory<OpenTsdbCli
     {
         this.socketFactory = socketFactory;
         this.addresses = new LinkedList<>();
+        this.errorCount = new AtomicInteger();
+        
         this.maxKeepAliveTime = configuration.getMaxKeepAliveTime();
         this.minTestTime = configuration.getMinTestTime();
-        this.errorCount = new AtomicInteger();
+        this.clientBufferSize = configuration.getClientBufferSize();
         
         Collection<OpenTsdbClientConfiguration> clientConfigs = configuration.getClientConfigurations();
         for (OpenTsdbClientConfiguration clientConfig : clientConfigs) {
@@ -59,7 +61,7 @@ public class OpenTsdbClientFactory extends BasePoolableObjectFactory<OpenTsdbCli
         
         // Build a new client
         Socket socket = socketFactory.newSocket(address);
-        return new OpenTsdbClient(socket);
+        return new OpenTsdbClient(socket, clientBufferSize);
     }
 
     /**
@@ -137,6 +139,7 @@ public class OpenTsdbClientFactory extends BasePoolableObjectFactory<OpenTsdbCli
     
     private final long maxKeepAliveTime;
     private final long minTestTime;
+    private final int clientBufferSize;
     
     private final AtomicInteger errorCount;
     

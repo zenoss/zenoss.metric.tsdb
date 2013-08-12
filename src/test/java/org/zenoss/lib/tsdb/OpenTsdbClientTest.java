@@ -39,7 +39,7 @@ public class OpenTsdbClientTest {
         MockitoAnnotations.initMocks(this);
         when(socket.getInputStream()).thenReturn(input);
         when(socket.getOutputStream()).thenReturn(output);
-        client = new OpenTsdbClient(socket);
+        client = new OpenTsdbClient(socket, 8192);
     }
 
     @Test
