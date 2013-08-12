@@ -23,9 +23,10 @@ public class OpenTsdbClient {
     /**
      * @param socket use provided socket for connection
      */
-    public OpenTsdbClient(Socket socket) {
+    public OpenTsdbClient(Socket socket, int bufferSize) {
         this.socket = socket;
         this.closed = false;
+        this.bufferSize = bufferSize;
         this.allocated = System.currentTimeMillis();
         this.charset = StandardCharsets.UTF_8; // Make configurable?
     }
@@ -41,14 +42,14 @@ public class OpenTsdbClient {
      * Write a metric to the tsdb socket and read it's response
      */
     public void put(String bugger) throws IOException {
-        socket.getOutputStream().write(bugger.getBytes(charset));
+        getOutput().write(bugger.getBytes(charset));
     }
 
     /**
      * flush the output stream
      */
     public void flush() throws IOException {
-        socket.getOutputStream().flush();
+        getOutput().flush();
     }
 
     /**
@@ -72,7 +73,7 @@ public class OpenTsdbClient {
      * request version from socket server
      */
     public String version() throws IOException {
-        OutputStream out = socket.getOutputStream();
+        OutputStream out = getOutput();
         out.write("version\n".getBytes(charset));
         out.flush();
 
@@ -153,11 +154,26 @@ public class OpenTsdbClient {
     SocketAddress socketAddress() {
         return socket.getRemoteSocketAddress();
     }
-
-    private boolean closed;
+    
+    private OutputStream getOutput() throws IOException {
+        if (output == null) {
+            output = new BufferedOutputStream(socket.getOutputStream(), bufferSize);
+        }
+        return output;
+    }
+    
+    // Dependencies
     private final Socket socket;
-    private final long allocated;
+    
+    // Internal state
+    private OutputStream output;
+    private boolean closed;
     private long tested;
+    private final long allocated;
+    
+    // Configuration
+    private final int bufferSize;
     private final Charset charset;
+    
 
 }

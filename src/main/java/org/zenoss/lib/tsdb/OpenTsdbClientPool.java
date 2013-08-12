@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
  * @author cschellenger
  */
 public class OpenTsdbClientPool extends GenericObjectPool<OpenTsdbClient> {
+    
     static final Logger log = LoggerFactory.getLogger(OpenTsdbClientPool.class);
 
     public OpenTsdbClientPool(OpenTsdbClientPoolConfiguration configuration) {
@@ -18,5 +19,12 @@ public class OpenTsdbClientPool extends GenericObjectPool<OpenTsdbClient> {
     public OpenTsdbClientPool(OpenTsdbClientPoolConfiguration config, OpenTsdbClientFactory clientFactory) {
         super(clientFactory, config.getClientConfigurations().size(), WHEN_EXHAUSTED_BLOCK, config.getMaxWaitTime());
         setTestOnBorrow(true);
+        this.tsdbFactory = clientFactory;
     }
+    
+    public int clearErrorCount() {
+        return tsdbFactory.clearErrorCount();
+    }
+    
+    private final OpenTsdbClientFactory tsdbFactory;
 }

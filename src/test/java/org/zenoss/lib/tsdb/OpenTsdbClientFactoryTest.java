@@ -4,10 +4,13 @@ import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.net.SocketTimeoutException;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 
@@ -55,18 +58,47 @@ public class OpenTsdbClientFactoryTest {
         
         when (socket.getOutputStream()).thenReturn(os);
         when (socket.getInputStream()).thenReturn(is);
-        when (is.read(any(byte[].class))).thenAnswer(new Answer<Object>() {
-
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                byte[] message = (byte[]) invocation.getArguments()[0];
-                byte[] version = "net.opentsdb built at revision 1.2.3".getBytes();
-                System.arraycopy(version, 0, message, 0, version.length);
-                return version.length;
-            } 
-        });
+        when (is.read(any(byte[].class))).thenAnswer(new ByteArrayWriter(
+                new SocketTimeoutException(), 
+                "net.opentsdb built at revision 1.2.3"));
         
-        assertEquals(Boolean.TRUE, factory.validateObject(c1));
+        assertTrue(factory.validateObject(c1));
+    }
+    
+    @Test
+    public void testReadError() throws Exception {
+        Socket socket = mock(Socket.class);
+        SocketFactory socketFactory = mock(SocketFactory.class);
+        OutputStream os = mock(OutputStream.class);
+        InputStream is = mock(InputStream.class);
+        when (socketFactory.newSocket (any (SocketAddress.class))).thenReturn(socket);
+        
+        OpenTsdbClientFactory factory = new OpenTsdbClientFactory(config(), socketFactory);
+        OpenTsdbClient c1 = factory.makeObject();
+        
+        when (socket.getOutputStream()).thenReturn(os);
+        when (socket.getInputStream()).thenReturn(is);
+        when (is.read(any(byte[].class))).thenAnswer(new ByteArrayWriter("Fake Error!"));
+        
+        assertFalse(factory.validateObject(c1));
+    }
+    
+    @Test
+    public void testReadIOException() throws Exception {
+        Socket socket = mock(Socket.class);
+        SocketFactory socketFactory = mock(SocketFactory.class);
+        OutputStream os = mock(OutputStream.class);
+        InputStream is = mock(InputStream.class);
+        when (socketFactory.newSocket (any (SocketAddress.class))).thenReturn(socket);
+        
+        OpenTsdbClientFactory factory = new OpenTsdbClientFactory(config(), socketFactory);
+        OpenTsdbClient c1 = factory.makeObject();
+        
+        when (socket.getOutputStream()).thenReturn(os);
+        when (socket.getInputStream()).thenReturn(is);
+        when (is.read(any(byte[].class))).thenThrow(new IOException());
+        
+        assertFalse(factory.validateObject(c1));
     }
     
     @Test
@@ -100,5 +132,31 @@ public class OpenTsdbClientFactoryTest {
         
         verify (socket, never()).getOutputStream();
         verify (socket, never()).getInputStream();
+    }
+    
+    static class ByteArrayWriter implements Answer<Integer> {
+        
+        private int count;
+        private Object[] responses;
+        
+        ByteArrayWriter(Object... responses) {
+            this.responses = responses;
+            this.count = 0;
+        }
+        
+        @Override
+        public Integer answer(InvocationOnMock invocation) throws Throwable {
+            assertTrue("Did not provide enough responses", responses.length > count);
+            
+            byte[] message = (byte[]) invocation.getArguments()[0];
+            Object response = responses[count++];
+            if (response instanceof Throwable) {
+                throw (Throwable) response;
+            }
+            byte[] reply = String.class.cast(response).getBytes(StandardCharsets.UTF_8);
+            System.arraycopy(reply, 0, message, 0, reply.length);
+            return reply.length;
+        }
+        
     }
 }

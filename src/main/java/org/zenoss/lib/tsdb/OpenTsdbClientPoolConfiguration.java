@@ -36,6 +36,17 @@ public class OpenTsdbClientPoolConfiguration {
     
     @JsonProperty
     private long maxWaitTime = 10_000L;
+    
+    @JsonProperty
+    private Integer clientBufferSize = 8192;
+    
+    /**
+     * The size of the output stream buffer.
+     * @return size
+     */
+    public Integer getClientBufferSize() {
+        return clientBufferSize;
+    }
 
     /**
      * Client factory configuration
@@ -76,6 +87,14 @@ public class OpenTsdbClientPoolConfiguration {
      */
     public long getMaxWaitTime() {
         return maxWaitTime;
+    }
+    
+    /**
+     * The size of the output stream buffer.
+     * @param bufferSize size
+     */
+    public void setClientBufferSize(Integer bufferSize) {
+        this.clientBufferSize = bufferSize;
     }
 
     /**
