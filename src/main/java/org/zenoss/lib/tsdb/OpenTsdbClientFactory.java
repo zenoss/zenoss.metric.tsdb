@@ -1,15 +1,19 @@
 package org.zenoss.lib.tsdb;
 
 import org.apache.commons.pool.BasePoolableObjectFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.util.ErrorHandler;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.net.SocketTimeoutException;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.zenoss.lib.tsdb.OpenTsdbClientPool.log;
 
 /**
  *  A factory for creating OpenTsdbClients.
@@ -20,11 +24,15 @@ public class OpenTsdbClientFactory extends BasePoolableObjectFactory<OpenTsdbCli
         this(configuration, new SocketFactory (configuration.getClientFactoryConfiguration()));
     }
     
-    public OpenTsdbClientFactory(OpenTsdbClientPoolConfiguration configuration, SocketFactory socketFactory) {
+    public OpenTsdbClientFactory(OpenTsdbClientPoolConfiguration configuration, SocketFactory socketFactory)
+    {
         this.socketFactory = socketFactory;
         this.addresses = new LinkedList<>();
+        this.errorCount = new AtomicInteger();
+        
         this.maxKeepAliveTime = configuration.getMaxKeepAliveTime();
         this.minTestTime = configuration.getMinTestTime();
+        this.clientBufferSize = configuration.getClientBufferSize();
         
         Collection<OpenTsdbClientConfiguration> clientConfigs = configuration.getClientConfigurations();
         for (OpenTsdbClientConfiguration clientConfig : clientConfigs) {
@@ -53,7 +61,7 @@ public class OpenTsdbClientFactory extends BasePoolableObjectFactory<OpenTsdbCli
         
         // Build a new client
         Socket socket = socketFactory.newSocket(address);
-        return new OpenTsdbClient(socket);
+        return new OpenTsdbClient(socket, clientBufferSize);
     }
 
     /**
@@ -81,12 +89,33 @@ public class OpenTsdbClientFactory extends BasePoolableObjectFactory<OpenTsdbCli
         }
         //test client after specified interval
         else if ((now - client.getTested()) >= minTestTime) {
+            try {
+                String rawErrors = client.read();
+                if (rawErrors != null) {
+                    String[] errs = rawErrors.split("\n");
+                    errorCount.addAndGet(errs.length);
+                    for (String err : errs) {
+                        log.warn("Client returned error: {}", err);
+                    }
+                    return false;
+                }
+            }
+            catch (SocketTimeoutException ste) {
+                // This is expected when there are no errors. Do nothing.
+            }
+            catch (IOException ioe) {
+                log.warn("Caught IOException checking for errors", ioe);
+                errorCount.incrementAndGet();
+                return false;
+            }
+            
             if (client.isAlive()) {
                 log.debug("Client tested out OK");
                 client.updateTested();
             } 
             else {
                 log.warn("Client not alive after min test interval: " + client.socketAddress());
+                errorCount.incrementAndGet();
                 return false;
             }
         }
@@ -103,9 +132,18 @@ public class OpenTsdbClientFactory extends BasePoolableObjectFactory<OpenTsdbCli
         client.close();
     }
     
+    static final Logger log = LoggerFactory.getLogger(OpenTsdbClientFactory.class);
+    
     private final SocketFactory socketFactory;
     private final Queue<SocketAddress> addresses;
     
     private final long maxKeepAliveTime;
     private final long minTestTime;
+    private final int clientBufferSize;
+    
+    private final AtomicInteger errorCount;
+    
+    public int clearErrorCount() {
+        return errorCount.getAndSet(0);
+    }
 }
