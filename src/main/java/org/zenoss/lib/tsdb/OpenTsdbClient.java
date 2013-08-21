@@ -92,7 +92,7 @@ public class OpenTsdbClient {
     public boolean isAlive() {
         try {
             String ver = version();
-            return ver.startsWith( "net.opentsdb built at revision");
+            return ver.startsWith( "net.opentsdb ");
         } catch (IOException ex) {
             return false;
         }
