@@ -25,6 +25,10 @@ public class OpenTsdbClientPool extends GenericObjectPool<OpenTsdbClient> {
     public int clearErrorCount() {
         return tsdbFactory.clearErrorCount();
     }
+
+    public boolean hasCollision() {
+        return tsdbFactory.hasCollision();
+    }
     
     private final OpenTsdbClientFactory tsdbFactory;
 }
