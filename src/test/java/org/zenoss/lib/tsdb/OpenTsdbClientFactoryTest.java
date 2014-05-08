@@ -79,10 +79,39 @@ public class OpenTsdbClientFactoryTest {
         when (socket.getOutputStream()).thenReturn(os);
         when (socket.getInputStream()).thenReturn(is);
         when (is.read(any(byte[].class))).thenAnswer(new ByteArrayWriter("Fake Error!"));
-        
-        assertFalse(factory.validateObject(c1));
+
+        assertFalse( factory.hasCollision());
+        assertFalse( factory.validateObject(c1));
+        assertFalse( factory.hasCollision());
+        assertEquals( 1, factory.clearErrorCount());
+        assertEquals( 0, factory.clearErrorCount());
     }
-    
+
+
+    @Test
+    public void testReadCollisionError() throws Exception {
+        Socket socket = mock(Socket.class);
+        SocketFactory socketFactory = mock(SocketFactory.class);
+        OutputStream os = mock(OutputStream.class);
+        InputStream is = mock(InputStream.class);
+        when (socketFactory.newSocket (any (SocketAddress.class))).thenReturn(socket);
+
+        OpenTsdbClientFactory factory = new OpenTsdbClientFactory(config(), socketFactory);
+        OpenTsdbClient c1 = factory.makeObject();
+
+        String message = "put: HBase error: 1000 RPCs waiting on \"tsdb,,1398325180794.54ad8182f2f2a0a1cc6d39ba26ca7f64.\" to come back online";
+        when (socket.getOutputStream()).thenReturn(os);
+        when (socket.getInputStream()).thenReturn(is);
+        when (is.read(any(byte[].class))).thenAnswer(new ByteArrayWriter(message));
+
+        assertFalse( factory.hasCollision());
+        assertFalse( factory.validateObject(c1));
+        assertTrue( factory.hasCollision());
+        assertFalse( factory.hasCollision());
+        assertEquals( 1, factory.clearErrorCount());
+        assertEquals( 0, factory.clearErrorCount());
+    }
+
     @Test
     public void testReadIOException() throws Exception {
         Socket socket = mock(Socket.class);

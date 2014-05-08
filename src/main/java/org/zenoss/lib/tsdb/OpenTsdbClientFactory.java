@@ -3,7 +3,6 @@ package org.zenoss.lib.tsdb;
 import org.apache.commons.pool.BasePoolableObjectFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.util.ErrorHandler;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -12,13 +11,18 @@ import java.net.SocketTimeoutException;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Pattern;
 
 
 /**
  *  A factory for creating OpenTsdbClients.
  */
 public class OpenTsdbClientFactory extends BasePoolableObjectFactory<OpenTsdbClient> {
+
+    //  put: HBase error: 1000 RPCs waiting on "tsdb,,1398325180794.54ad8182f2f2a0a1cc6d39ba26ca7f64." to come back online
+    private static final Pattern COLLISION_ERROR_PATTERN = Pattern.compile(".*HBase error: .* RPCs waiting on .* to come back online");
 
     public OpenTsdbClientFactory(OpenTsdbClientPoolConfiguration configuration) {
         this(configuration, new SocketFactory (configuration.getClientFactoryConfiguration()));
@@ -29,6 +33,7 @@ public class OpenTsdbClientFactory extends BasePoolableObjectFactory<OpenTsdbCli
         this.socketFactory = socketFactory;
         this.addresses = new LinkedList<>();
         this.errorCount = new AtomicInteger();
+        this.collision = new AtomicBoolean(false);
         
         this.maxKeepAliveTime = configuration.getMaxKeepAliveTime();
         this.minTestTime = configuration.getMinTestTime();
@@ -95,6 +100,9 @@ public class OpenTsdbClientFactory extends BasePoolableObjectFactory<OpenTsdbCli
                     String[] errs = rawErrors.split("\n");
                     errorCount.addAndGet(errs.length);
                     for (String err : errs) {
+                        if (COLLISION_ERROR_PATTERN.matcher( err).matches()) {
+                            collision.set( true);
+                        }
                         log.warn("Client returned error: {}", err);
                     }
                     return false;
@@ -131,7 +139,22 @@ public class OpenTsdbClientFactory extends BasePoolableObjectFactory<OpenTsdbCli
     public void destroyObject(OpenTsdbClient client) {
         client.close();
     }
-    
+
+    public int clearErrorCount() {
+        return errorCount.getAndSet(0);
+    }
+
+    /**
+     * @return boolean
+     */
+    public boolean hasCollision() {
+        return collision.getAndSet(false);
+    }
+
+    public void clearCollision() {
+        collision.set(false);
+    }
+
     static final Logger log = LoggerFactory.getLogger(OpenTsdbClientFactory.class);
     
     private final SocketFactory socketFactory;
@@ -142,8 +165,5 @@ public class OpenTsdbClientFactory extends BasePoolableObjectFactory<OpenTsdbCli
     private final int clientBufferSize;
     
     private final AtomicInteger errorCount;
-    
-    public int clearErrorCount() {
-        return errorCount.getAndSet(0);
-    }
+    private final AtomicBoolean collision;
 }
