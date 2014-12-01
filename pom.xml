@@ -5,11 +5,11 @@
     <groupId>org.zenoss</groupId>
     <artifactId>metric-tsdb</artifactId>
     <packaging>jar</packaging>
-    <version>0.0.6</version>
+    <version>0.0.7</version>
     <name>zenoss.metric.tsdb</name>
     <url>http://maven.apache.org</url>
     <properties>
-        <version.zapp>0.0.6</version.zapp>
+        <version.zapp>0.0.18</version.zapp>
         <version.dropwizard>0.6.2</version.dropwizard>
         <version.jersey>1.15</version.jersey>
         <version.junit>4.11</version.junit>
