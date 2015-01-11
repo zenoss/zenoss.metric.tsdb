@@ -83,9 +83,9 @@ public class OpenTsdbClientPoolConfiguration {
     }
 
     /**
-     * Time between testing a client's liveliness
-     * @return time in milliseconds
+     * @deprecated
      */
+    @Deprecated
     public long getMinTestTime() {
         return minTestTime;
     }
@@ -126,9 +126,9 @@ public class OpenTsdbClientPoolConfiguration {
     }
 
     /**
-     * Time between testing a client's liveliness
-     * @param minTestTime time in milliseconds
+     * @deprecated
      */
+    @Deprecated
     public void setMinTestTime(long minTestTime) {
         this.minTestTime = minTestTime;
     }
