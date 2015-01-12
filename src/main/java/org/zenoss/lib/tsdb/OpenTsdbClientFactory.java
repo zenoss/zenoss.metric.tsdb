@@ -20,6 +20,7 @@ import java.net.SocketAddress;
 import java.net.SocketTimeoutException;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -46,7 +47,6 @@ public class OpenTsdbClientFactory extends BasePoolableObjectFactory<OpenTsdbCli
         this.collision = new AtomicBoolean(false);
         
         this.maxKeepAliveTime = configuration.getMaxKeepAliveTime();
-        this.minTestTime = configuration.getMinTestTime();
         this.clientBufferSize = configuration.getClientBufferSize();
         
         Collection<OpenTsdbClientConfiguration> clientConfigs = configuration.getClientConfigurations();
@@ -84,9 +84,8 @@ public class OpenTsdbClientFactory extends BasePoolableObjectFactory<OpenTsdbCli
      * <p>This checks multiple factors:
      * <ul>
      * <li>Has the client exceeded its maximum TTL?</li>
-     * <li>Has the client been explicitly closed?</li>
-     * <li>If more than the minimum test time has elapsed, can the client still 
-     * receive data from the OpenTSDB server?</li>
+     * <li>Has the client or its socket been closed?</li>
+     * <li>Ping the OpenTSDB server. Any exceptions or error messages sent in response?</li>
      * </ul>
      * If the answer to any of these questions is "yes" the client will be
      * considered invalid and will not be used.
@@ -102,43 +101,30 @@ public class OpenTsdbClientFactory extends BasePoolableObjectFactory<OpenTsdbCli
             log.info("Client has exceeded its maximum lifetime and will be discarded.");
             return false;
         }
-        //test client after specified interval
-        else if ((now - client.getTested()) >= minTestTime) {
-            try {
-                String rawErrors = client.read();
-                if (rawErrors != null) {
-                    String[] errs = rawErrors.split("\n");
-                    errorCount.addAndGet(errs.length);
-                    for (String err : errs) {
-                        if (COLLISION_ERROR_PATTERN.matcher( err).matches()) {
-                            collision.set( true);
-                        }
-                        log.warn("Client returned error: {}", err);
-                    }
-                    return false;
+
+        if (client.isClosed())
+            return false;
+
+        try {
+            boolean anyErrors = false;
+            for (String error : client.checkForErrors()) {
+                anyErrors = true;
+                log.warn("Client returned error: {}", error);
+                errorCount.incrementAndGet();
+                if (COLLISION_ERROR_PATTERN.matcher(error).matches()) {
+                    collision.set(true);
                 }
             }
-            catch (SocketTimeoutException ste) {
-                // This is expected when there are no errors. Do nothing.
-            }
-            catch (IOException ioe) {
-                log.warn("Caught IOException checking for errors", ioe);
-                errorCount.incrementAndGet();
+            if (anyErrors)
                 return false;
-            }
-            
-            if (client.isAlive()) {
-                log.debug("Client tested out OK");
-                client.updateTested();
-            } 
-            else {
-                log.warn("Client not alive after min test interval: " + client.socketAddress());
-                errorCount.incrementAndGet();
-                return false;
-            }
+        } catch (IOException e) {
+            log.warn("Caught IOException checking for errors", e);
+            errorCount.incrementAndGet();
+            return false;
         }
-        
-        return !client.isClosed(); // Has anyone explicitly closed the client?
+        log.debug("Client tested out OK");
+
+        return true;
     }
 
     /**
@@ -171,7 +157,6 @@ public class OpenTsdbClientFactory extends BasePoolableObjectFactory<OpenTsdbCli
     private final Queue<SocketAddress> addresses;
     
     private final long maxKeepAliveTime;
-    private final long minTestTime;
     private final int clientBufferSize;
     
     private final AtomicInteger errorCount;

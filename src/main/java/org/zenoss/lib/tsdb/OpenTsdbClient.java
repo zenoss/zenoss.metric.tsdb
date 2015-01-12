@@ -18,6 +18,9 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 
@@ -63,20 +66,53 @@ public class OpenTsdbClient {
     }
 
     /**
-     * Read one line from the tsdb socket
+     * Wait for input on the tsdb socket. As soon as any becomes available, return all that became available.
+     * @return All the input that became available, or null if the socket reached the end of its input.
      */
     public String read() throws IOException {
-        InputStream in = socket.getInputStream();
-
-        //assuming a message size
-        byte[] message = new byte[512];
-        int read = in.read (message);
-
-        if (read <= 0) {
+        StringBuilder sb = new StringBuilder();
+        BufferedReader in = getInput();
+        char[] buffer = new char[1024];
+        int len = in.read(buffer);
+        if (len <= 0)
             return null;
+        else {
+            sb.append(buffer, 0, len);
+            while (in.ready()) {
+                len = in.read(buffer);
+                if (len > 0)
+                    sb.append(buffer, 0, len);
+            }
+            return sb.toString();
         }
+    }
 
-        return new String (message, 0, read, charset);
+    /** Flush the tsdb socket and see if any errors come back. */
+    public List<String> checkForErrors() throws IOException {
+        BufferedReader in = getInput();
+        OutputStream out = getOutput();
+        out.write("version\n".getBytes(charset));
+        out.flush();
+        boolean block = true;
+        String line = null;
+        List<String> errors = null;
+        while (block || line != null) {
+            if (block) {
+                line = in.readLine();
+                block = false;
+            } else if (in.ready()) {
+                line = in.readLine();
+            } else {
+                line = null;
+            }
+            if (line != null && !line.isEmpty() && !line.startsWith("net.opentsdb ") && !line.startsWith("Built on ")) {
+                if (errors == null) {
+                    errors = new ArrayList<String>();
+                }
+                errors.add(line);
+            }
+        }
+        return (errors == null) ? Collections.<String>emptyList() : errors;
     }
 
     /**
@@ -89,7 +125,7 @@ public class OpenTsdbClient {
 
         String version = read();
         if (version == null) {
-            throw new IOException( "no version response from server");
+            throw new IOException("no version response from server");
         }
 
         return version;
@@ -153,14 +189,6 @@ public class OpenTsdbClient {
         return allocated;
     }
     
-    long getTested() {
-        return tested;
-    }
-    
-    void updateTested() {
-        tested = System.currentTimeMillis();
-    }
-    
     SocketAddress socketAddress() {
         return socket.getRemoteSocketAddress();
     }
@@ -171,19 +199,24 @@ public class OpenTsdbClient {
         }
         return output;
     }
+
+    private BufferedReader getInput() throws IOException {
+        if (input == null) {
+            input = new BufferedReader(new InputStreamReader(socket.getInputStream(), charset));
+        }
+        return input;
+    }
     
     // Dependencies
     private final Socket socket;
     
     // Internal state
     private OutputStream output;
+    private BufferedReader input;
     private boolean closed;
-    private long tested;
     private final long allocated;
     
     // Configuration
     private final int bufferSize;
     private final Charset charset;
-    
-
 }

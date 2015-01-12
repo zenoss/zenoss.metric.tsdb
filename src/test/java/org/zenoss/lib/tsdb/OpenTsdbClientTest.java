@@ -96,12 +96,17 @@ public class OpenTsdbClientTest {
                 System.arraycopy(response.getBytes(), 0, message, 0, response.length());
                 return response.getBytes().length;
             }
-        }).when(input).read(any(byte[].class));
+        }).when(input).read(any(byte[].class), anyInt(), anyInt());
         assertEquals(response, client.read());
     }
 
     @Test
     public void testReadReturnsNull() throws IOException {
+        doAnswer(new Answer() {
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                return -1;
+            }
+        }).when(input).read(any(byte[].class), anyInt(), anyInt());
         assertNull(client.read());
     }
     
@@ -115,7 +120,7 @@ public class OpenTsdbClientTest {
                 System.arraycopy(stringBytes, 0, message, 0, stringBytes.length);
                 return stringBytes.length;
             }
-        }).when(input).read(any(byte[].class));
+        }).when(input).read(any(byte[].class), anyInt(), anyInt());
         
         doAnswer(new BufferedWriteVerifier(response)).
             when(output).write(any(byte[].class), anyInt(), anyInt());
@@ -140,7 +145,7 @@ public class OpenTsdbClientTest {
                 System.arraycopy(response.getBytes(), 0, message, 0, response.length());
                 return response.getBytes().length;
             }
-        }).when(input).read(any(byte[].class));
+        }).when(input).read(any(byte[].class), anyInt(), anyInt());
         assertTrue(client.isAlive());
     }
 
