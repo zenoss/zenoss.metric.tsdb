@@ -14,9 +14,7 @@ import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketTimeoutException;
@@ -60,7 +58,7 @@ public class OpenTsdbClientFactoryTest {
         Socket socket = mock(Socket.class);
         SocketFactory socketFactory = mock(SocketFactory.class);
         OutputStream os = mock(OutputStream.class);
-        InputStream is = mock(InputStream.class);
+        InputStream is = new ByteArrayInputStream("net.opentsdb built at revision 1.2.3".getBytes(StandardCharsets.UTF_8));
         when (socketFactory.newSocket (any (SocketAddress.class))).thenReturn(socket);
         
         OpenTsdbClientFactory factory = new OpenTsdbClientFactory(config(), socketFactory);
@@ -68,10 +66,7 @@ public class OpenTsdbClientFactoryTest {
         
         when (socket.getOutputStream()).thenReturn(os);
         when (socket.getInputStream()).thenReturn(is);
-        when (is.read(any(byte[].class))).thenAnswer(new ByteArrayWriter(
-                new SocketTimeoutException(), 
-                "net.opentsdb built at revision 1.2.3"));
-        
+
         assertTrue(factory.validateObject(c1));
     }
     
@@ -80,7 +75,7 @@ public class OpenTsdbClientFactoryTest {
         Socket socket = mock(Socket.class);
         SocketFactory socketFactory = mock(SocketFactory.class);
         OutputStream os = mock(OutputStream.class);
-        InputStream is = mock(InputStream.class);
+        InputStream is = new ByteArrayInputStream("Fake Error!".getBytes(StandardCharsets.UTF_8));
         when (socketFactory.newSocket (any (SocketAddress.class))).thenReturn(socket);
         
         OpenTsdbClientFactory factory = new OpenTsdbClientFactory(config(), socketFactory);
@@ -88,7 +83,6 @@ public class OpenTsdbClientFactoryTest {
         
         when (socket.getOutputStream()).thenReturn(os);
         when (socket.getInputStream()).thenReturn(is);
-        when (is.read(any(byte[].class))).thenAnswer(new ByteArrayWriter("Fake Error!"));
 
         assertFalse( factory.hasCollision());
         assertFalse( factory.validateObject(c1));
@@ -103,16 +97,16 @@ public class OpenTsdbClientFactoryTest {
         Socket socket = mock(Socket.class);
         SocketFactory socketFactory = mock(SocketFactory.class);
         OutputStream os = mock(OutputStream.class);
-        InputStream is = mock(InputStream.class);
         when (socketFactory.newSocket (any (SocketAddress.class))).thenReturn(socket);
 
         OpenTsdbClientFactory factory = new OpenTsdbClientFactory(config(), socketFactory);
         OpenTsdbClient c1 = factory.makeObject();
 
         String message = "put: HBase error: 1000 RPCs waiting on \"tsdb,,1398325180794.54ad8182f2f2a0a1cc6d39ba26ca7f64.\" to come back online";
+        InputStream is = new ByteArrayInputStream(message.getBytes(StandardCharsets.UTF_8));
+
         when (socket.getOutputStream()).thenReturn(os);
         when (socket.getInputStream()).thenReturn(is);
-        when (is.read(any(byte[].class))).thenAnswer(new ByteArrayWriter(message));
 
         assertFalse( factory.hasCollision());
         assertFalse( factory.validateObject(c1));
@@ -152,22 +146,6 @@ public class OpenTsdbClientFactoryTest {
         Thread.sleep(MAX_KEEP_ALIVE + 1); // Longer than max keep alive
         
         assertEquals(Boolean.FALSE, factory.validateObject(c1));
-        
-        verify (socket, never()).getOutputStream();
-        verify (socket, never()).getInputStream();
-    }
-    
-    @Test
-    public void testRecentlyTested() throws Exception {
-        Socket socket = mock(Socket.class);
-        SocketFactory socketFactory = mock(SocketFactory.class);
-        when (socketFactory.newSocket (any (SocketAddress.class))).thenReturn(socket);
-        
-        OpenTsdbClientFactory factory = new OpenTsdbClientFactory(config(), socketFactory);
-        OpenTsdbClient c1 = factory.makeObject();
-        c1.updateTested();
-        
-        assertEquals(Boolean.TRUE, factory.validateObject(c1));
         
         verify (socket, never()).getOutputStream();
         verify (socket, never()).getInputStream();
