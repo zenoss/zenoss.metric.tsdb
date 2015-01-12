@@ -1,0 +1,4 @@
+0.0.8
+ * Fixed client read() to read more than 512 bytes if they're available.
+ * Fixed client validation checks, so they happen every time.
+ * Implemented checkForErrors() to pro-actively check for errors.
