@@ -137,8 +137,21 @@ public class OpenTsdbClientTest {
     }
 
     @Test
-    public void testIsAlive() throws IOException {
-        final String response = "net.opentsdb built at revision \n";
+    public void testIsAlive211() throws IOException {
+        final String response = "net.opentsdb 2.1.1 built at revision \n";
+        doAnswer(new Answer() {
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                byte[] message = (byte[]) invocation.getArguments()[0];
+                System.arraycopy(response.getBytes(), 0, message, 0, response.length());
+                return response.getBytes().length;
+            }
+        }).when(input).read(any(byte[].class), anyInt(), anyInt());
+        assertTrue(client.isAlive());
+    }
+
+    @Test
+    public void testIsAlive220() throws IOException {
+        final String response = "net.opentsdb.tools 2.2.o built at revision \n";
         doAnswer(new Answer() {
             public Object answer(InvocationOnMock invocation) throws Throwable {
                 byte[] message = (byte[]) invocation.getArguments()[0];
