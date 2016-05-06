@@ -50,15 +50,15 @@ public class OpenTsdbClientFactoryTest {
         when (socketFactory.newSocket (any (SocketAddress.class))).thenReturn(socket);
         
         OpenTsdbClientFactory factory = new OpenTsdbClientFactory(config(), socketFactory);
-        assertNotNull (factory.makeObject());
+        assertNotNull(factory.makeObject());
     }
     
     @Test
-    public void testBasicValidate() throws Exception {
+    public void testBasicValidateForOpentsdb211() throws Exception {
         Socket socket = mock(Socket.class);
         SocketFactory socketFactory = mock(SocketFactory.class);
         OutputStream os = mock(OutputStream.class);
-        InputStream is = new ByteArrayInputStream("net.opentsdb built at revision 1.2.3".getBytes(StandardCharsets.UTF_8));
+        InputStream is = new ByteArrayInputStream("net.opentsdb 2.1.1 built at revision 1.2.3".getBytes(StandardCharsets.UTF_8));
         when (socketFactory.newSocket (any (SocketAddress.class))).thenReturn(socket);
         
         OpenTsdbClientFactory factory = new OpenTsdbClientFactory(config(), socketFactory);
@@ -69,7 +69,24 @@ public class OpenTsdbClientFactoryTest {
 
         assertTrue(factory.validateObject(c1));
     }
-    
+
+    @Test
+    public void testBasicValidateForOpentsdb220() throws Exception {
+        Socket socket = mock(Socket.class);
+        SocketFactory socketFactory = mock(SocketFactory.class);
+        OutputStream os = mock(OutputStream.class);
+        InputStream is = new ByteArrayInputStream("net.opentsdb.tools 2.2.0 built at revision 1.2.3".getBytes(StandardCharsets.UTF_8));
+        when (socketFactory.newSocket (any (SocketAddress.class))).thenReturn(socket);
+
+        OpenTsdbClientFactory factory = new OpenTsdbClientFactory(config(), socketFactory);
+        OpenTsdbClient c1 = factory.makeObject();
+
+        when (socket.getOutputStream()).thenReturn(os);
+        when (socket.getInputStream()).thenReturn(is);
+
+        assertTrue(factory.validateObject(c1));
+    }
+
     @Test
     public void testReadError() throws Exception {
         Socket socket = mock(Socket.class);

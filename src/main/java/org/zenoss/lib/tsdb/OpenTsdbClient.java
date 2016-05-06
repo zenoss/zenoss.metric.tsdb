@@ -105,7 +105,7 @@ public class OpenTsdbClient {
             } else {
                 line = null;
             }
-            if (line != null && !line.isEmpty() && !line.startsWith("net.opentsdb ") && !line.startsWith("Built on ")) {
+            if (line != null && !line.isEmpty() && !line.startsWith("net.opentsdb") && !line.startsWith("Built on ")) {
                 if (errors == null) {
                     errors = new ArrayList<String>();
                 }
@@ -138,7 +138,7 @@ public class OpenTsdbClient {
     public boolean isAlive() {
         try {
             String ver = version();
-            return ver.startsWith( "net.opentsdb ");
+            return ver.startsWith( "net.opentsdb");
         } catch (IOException ex) {
             return false;
         }
