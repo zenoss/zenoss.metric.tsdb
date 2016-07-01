@@ -23,6 +23,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import java.util.Comparator;
+import java.util.LinkedList;
+
 
 /**
  * OpenTsdbClient provides a socket interface to the OpenTsdb telnet service.  The client
@@ -173,7 +176,16 @@ public class OpenTsdbClient {
         builder.append(" ");
         builder.append(value);
 
-        for (Map.Entry<String, String> entry : tags.entrySet()) {
+        // Sort the entries by key to guarantee their order.
+        List<Map.Entry<String, String>> sortedTags = new LinkedList<>(tags.entrySet());
+        Collections.sort(sortedTags, new Comparator<Map.Entry<String, String>>() {
+            @Override
+            public int compare(Map.Entry<String, String>a, Map.Entry<String, String>b) {
+                return (a.getKey().compareTo(b.getKey()));
+            }
+        });
+
+        for (Map.Entry<String, String> entry : sortedTags) {
             String entryName = entry.getKey();
             String entryValue = entry.getValue();
             builder.append(" ");

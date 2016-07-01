@@ -24,6 +24,7 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.Assert.*;
@@ -78,6 +79,26 @@ public class OpenTsdbClientTest {
         client.put(message);
         client.flush();
         verify(output, times(1)).write(any(byte[].class), anyInt(), anyInt());
+    }
+
+    @Test
+    public void testPutSortsKeys() throws IOException {
+        final String expected = "put m 0 0.0 tag-alpha=zero tag-bravo=yankee tag-charlie=zulu\n";
+        Map<String, String> tags1 = new HashMap<String, String>();
+        tags1.put("tag-charlie", "zulu");
+        tags1.put("tag-alpha", "zero");
+        tags1.put("tag-bravo", "yankee");
+        final String message1 = OpenTsdbClient.toPutMessage("m", 0, 0.0, tags1);
+
+        Map<String, String> tags2 = new HashMap<String, String>();
+        tags2.put("tag-bravo", "yankee");
+        tags2.put("tag-charlie", "zulu");
+        tags2.put("tag-alpha", "zero");
+        final String message2 = OpenTsdbClient.toPutMessage("m", 0, 0.0, tags2);
+
+        assertEquals(expected, message1);
+        assertEquals(expected, message2);
+        assertEquals(message1, message2);
     }
 
 

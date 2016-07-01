@@ -5,7 +5,7 @@
     <groupId>org.zenoss</groupId>
     <artifactId>metric-tsdb</artifactId>
     <packaging>jar</packaging>
-    <version>0.0.9</version>
+    <version>0.0.10</version>
     <name>zenoss.metric.tsdb</name>
     <url>http://maven.apache.org</url>
     <properties>
@@ -69,7 +69,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>findbugs-maven-plugin</artifactId>
-                <version>2.5.2</version>
+                <version>3.0.1</version>
                 <executions>
                     <execution>
                         <id>check-for-bugs</id>
