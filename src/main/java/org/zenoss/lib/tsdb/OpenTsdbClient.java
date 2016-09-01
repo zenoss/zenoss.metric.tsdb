@@ -174,7 +174,16 @@ public class OpenTsdbClient {
         builder.append(" ");
         builder.append(timestamp);
         builder.append(" ");
-        builder.append(value);
+
+        // As of opentsdb 2.2 float values are stored on 4 bytes. Integers
+        // however are stored in 64 bits if needed. That is why if the 
+        // value has no decimals, we store it as an int. (ZEN-24550)
+        if (Math.ceil(value) == Math.floor(value)) {
+            builder.append((long)value);
+        }
+        else {
+            builder.append(value);
+        }
 
         // Sort the entries by key to guarantee their order.
         List<Map.Entry<String, String>> sortedTags = new LinkedList<>(tags.entrySet());
