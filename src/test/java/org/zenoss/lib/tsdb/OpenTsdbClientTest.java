@@ -83,22 +83,29 @@ public class OpenTsdbClientTest {
 
     @Test
     public void testPutSortsKeys() throws IOException {
-        final String expected = "put m 0 0.0 tag-alpha=zero tag-bravo=yankee tag-charlie=zulu\n";
+        final String expected = "put m 0 0.1 tag-alpha=zero tag-bravo=yankee tag-charlie=zulu\n";
         Map<String, String> tags1 = new HashMap<String, String>();
         tags1.put("tag-charlie", "zulu");
         tags1.put("tag-alpha", "zero");
         tags1.put("tag-bravo", "yankee");
-        final String message1 = OpenTsdbClient.toPutMessage("m", 0, 0.0, tags1);
+        final String message1 = OpenTsdbClient.toPutMessage("m", 0, 0.1, tags1);
 
         Map<String, String> tags2 = new HashMap<String, String>();
         tags2.put("tag-bravo", "yankee");
         tags2.put("tag-charlie", "zulu");
         tags2.put("tag-alpha", "zero");
-        final String message2 = OpenTsdbClient.toPutMessage("m", 0, 0.0, tags2);
+        final String message2 = OpenTsdbClient.toPutMessage("m", 0, 0.1, tags2);
+
+        // Values with no decimal part are stored as integers bc as of opentsdb 2.2
+        // float values are stored on 32 bits and integers can be stored in up to
+        // 64 bits depending ion how big the number is (ZEN-24550)
+        final String expected2 = "put m 0 10 tag-alpha=zero tag-bravo=yankee tag-charlie=zulu\n";
+        final String message3 = OpenTsdbClient.toPutMessage("m", 0, 10.0, tags2);
 
         assertEquals(expected, message1);
         assertEquals(expected, message2);
         assertEquals(message1, message2);
+        assertEquals(expected2, message3);
     }
 
 
